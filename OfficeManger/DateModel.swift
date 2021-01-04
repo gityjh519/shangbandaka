@@ -83,40 +83,157 @@ struct DateModel: Codable,Identifiable {
     var beginTime: String?
     var endTime: String?
     var date: String?
+    var isCaculateTime: Bool?
+    
+//    var externTimeInt: Int {
+//        
+//        if isCaculateTime != nil {
+//            if isCaculateTime != true {
+//                return 0;
+//            }
+//        }
+//        
+//        
+//        guard let eTime = endTime  else {
+//            return 0;
+//        }
+//        let endTimeSegment = eTime.components(separatedBy: ":");
+//        if endTimeSegment.count != 3 {
+//            return 0;
+//        }
+//        
+//        let bTime = beginTime!.components(separatedBy: ":")
+//        var bHH = 19;
+//        var externHHHH = 0;
+//        if ["星期六","星期日"].contains(where: { (item) -> Bool in
+//            dateWeek!.contains(item)
+//        }) {
+//         
+//            bHH = Int(bTime[0])!
+//            let bm = Int(bTime[1])!
+//            if bm <= 30 {
+//                externHHHH = 1;
+//            }else {
+//                bHH += 1
+//            }
+//        }
+//        
+////        let endHour = Int(endTimeSegment[0])
+//        
+//        
+//        let hh = Int(endTimeSegment[0])! - bHH;
+//        
+//        if hh < 0 {
+//            return 0;
+//        }
+//        let mm = Int(endTimeSegment[1])!
+//        let extenHH = (hh * 60 + mm) / 30 + externHHHH
+//        return extenHH;
+//    }
     
     var externTimeInt: Int {
-        guard let eTime = endTime  else {
+        
+        if isCaculateTime != nil {
+            if isCaculateTime != true {
+                return 0;
+            }
+        }
+        
+        
+        guard let eTime = endTime ,beginTime != nil  else {
             return 0;
         }
-        let times = eTime.components(separatedBy: ":");
-        if times.count != 3 {
+        let endTimeSegment = eTime.components(separatedBy: ":");
+        if endTimeSegment.count != 3 {
             return 0;
         }
         
         let bTime = beginTime!.components(separatedBy: ":")
-        var bHH = 19;
+        var beginHour = 19;
         var externHHHH = 0;
         if ["星期六","星期日"].contains(where: { (item) -> Bool in
             dateWeek!.contains(item)
         }) {
-            bHH = Int(bTime[0])!
+         
+            beginHour = Int(bTime[0])!
             let bm = Int(bTime[1])!
             if bm <= 30 {
                 externHHHH = 1;
             }else {
-                bHH += 1
+                beginHour += 1
             }
         }
         
-        let hh = Int(times[0])! - bHH;
-        if hh < 0 {
-            return 0;
+        let endHour = Int(endTimeSegment[0])!
+        
+        if endHour < beginHour  {
+            
+            if endHour > 6 {
+                return 0
+            }
+            
+            var hh = (24 - beginHour + endHour) * 2;
+            let endMin = Int(endTimeSegment[1])!
+            if endMin > 30 {
+                hh += 1
+            }
+            return hh
+            
+        }else {
+            let hh = Int(endTimeSegment[0])! - beginHour;
+     
+            let mm = Int(endTimeSegment[1])!
+            let extenHH = (hh * 60 + mm) / 30 + externHHHH
+            return extenHH;
         }
-        let mm = Int(times[1])!
-        let extenHH = (hh * 60 + mm) / 30 + externHHHH
-        return extenHH;
+        
+        
     }
     
+//    var externTimeInt: Int {
+//        
+//        if isCaculateTime != nil {
+//            if isCaculateTime != true {
+//                return 0;
+//            }
+//        }
+//        
+//        if beginTime == nil || endTime == nil {
+//            return 0
+//        }
+//        
+//        let beginDate = date! + " " + beginTime!;
+//        let endDate = date! + " " + endTime!;
+//        
+//        let formater = DateFormatter()
+//        formater.dateFormat = "yyyy年MM月dd日 EEEE HH:mm:ss";
+//        formater.locale = Locale(identifier: "zh-Hans_US")
+//        formater.calendar = .init(identifier: .gregorian);
+//        
+//        let bTimes = formater.date(from: beginDate);
+//        let dTimes = formater.date(from: endDate);
+//        
+//        let otherTimes = dTimes?.timeIntervalSince(bTimes!) ?? 0
+//        let extenT = ["星期六","星期日"].contains { (item) -> Bool in
+//            dateWeek!.contains(item)
+//        } 
+//        return Int((otherTimes / 60.0 / 60.0) / 30.0 - (extenT ? 0 : 10.5) )
+//        
+//    }
+    
+    func saveCurrentRemark(remark: String) {
+        let path = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)[0] + "/date/remark/";
+        let file = FileManager.default;
+        if !file.fileExists(atPath: path) {
+            try? file.createDirectory(atPath: path, withIntermediateDirectories: true, attributes: nil)
+        }
+        try? remark.write(to: URL(fileURLWithPath: path + dateWeek!), atomically: true, encoding: .utf8)
+    }
+    func readRemark() -> String {
+        let path = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)[0] + "/date/remark/";
+        let value = try? String(contentsOf: URL(fileURLWithPath: path + dateWeek!))
+        return value ?? ""
+    }
     
     
     var externTime: String? {
@@ -187,6 +304,7 @@ struct DateModel: Codable,Identifiable {
         dateFormater.dateFormat = "yyyyMMddHHmmssSSS";
         dateFormater.calendar = .init(identifier: .gregorian)
         self.id = dateFormater.string(from: Date())
+        self.isCaculateTime = true
     }
     
    
@@ -270,5 +388,31 @@ extension DateModel {
         let yIdx = Int(list[0])! - 2020
         let mIdx = Int(list[1])!
         return [yIdx,mIdx]
+    }
+}
+
+extension DateItemModel {
+    
+   class func readAllDateItems() -> [DateModel] {
+        let path = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)[0] + "/date";
+        let file = FileManager.default;
+    
+
+    guard var directoryList = file.enumerator(atPath: path)?.allObjects as? [String] else {
+        return [DateModel]()
+    }
+    
+    var allList = [DateModel]()
+      
+    directoryList.removeAll { (item) -> Bool in
+         !item.contains("年")
+    }
+    
+    for item in directoryList {
+        let items = DateModel.readDateFromDiskFor(date: item)
+        allList.append(contentsOf: items);
+    }
+    
+        return allList
     }
 }

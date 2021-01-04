@@ -36,7 +36,23 @@ struct ContentView: View {
     
     var body: some View {
         NavigationView {
-            self.contentView
+            VStack {
+                self.summaryLabel.padding().sheet(isPresented: $isAlaterDate) { ()  in
+                    
+                    AlterDatePickerView(title: self.index == 1 ? "上班时间" : "下班时间",dateTime: self.currentJson.dateWeek!) { (date) in
+                        
+                        self.isAlaterDate.toggle()
+                        
+                        self.changeCurrentTime(item: self.currentJson, index: self.index, date: date)
+                        
+                        
+                    }  
+                    
+                }
+                self.contentView
+                Spacer()
+                
+            }
             
         }.alert(isPresented: $isAlert) { 
             Alert(title: Text(alertTitle), message: nil, primaryButton: .cancel(), secondaryButton: .default(Text("确定"), action: { 
@@ -44,6 +60,8 @@ struct ContentView: View {
             }))
         }
     }
+    
+    @State var currentDate = Date()
     
     /// 联系人关系图
     var contanctContentView: some View {
@@ -60,18 +78,46 @@ struct ContentView: View {
             
             List{ 
                 
-                contanctContentView
+//                contanctContentView
                 
-                dateLabel
+//                Button(action: { 
+//                    let windon = UIApplication.shared.windows.last?.windowScene?.delegate as? SceneDelegate;
+//                    windon?.setContact()
+//                    
+//                }) {
+//                    Text("联系人")
+//                }
                 
-                summaryLabel
+                dateLabel 
+                
                 
                 ForEach(model.list) { (item: DateModel) in
                     
                     DateTimeItem(model: .constant(item), date: self.model.currentDate) { (idx) in
+                        
                         self.index = idx
-                        self.isAlaterDate.toggle()
                         self.currentJson = item
+                        
+                        if idx != -1 {
+                            self.currentJson = item
+                            self.isAlaterDate.toggle()
+                        }else {
+                            var tog = self.currentJson.isCaculateTime ?? false
+                            tog.toggle()
+                            
+                            var tempJson = DateModel(beginTime: self.currentJson.beginTime, endTime: self.currentJson.endTime, date: self.currentJson.date);
+                            tempJson.saveCurrentRemark(remark: self.currentJson.readRemark());
+                            tempJson.isCaculateTime = tog;
+                            if let index = self.model.list.firstIndex(where: { (subItem) -> Bool in
+                                subItem.id == item.id
+                            }) {
+                                
+                                self.model.list[index] = tempJson
+                            }
+                            
+                        }
+                        
+                        
                     }
                 }.onDelete { (set: IndexSet) in
                     if let index = set.first {
@@ -80,17 +126,8 @@ struct ContentView: View {
                     }
                 }
                 
-            }.sheet(isPresented: self.$isAlaterDate) { 
                 
-                AlterDatePickerView(title: self.index == 1 ? "上班时间" : "下班时间",dateTime: self.currentJson.dateWeek!) { (date) in
-                 
-                    self.isAlaterDate.toggle()
-
-                    self.changeCurrentTime(item: self.currentJson, index: self.index, date: date)
-
-                    
-                }
-            }          
+            }      
             ButtonItems(model: .constant(self.model)) { (tag) in
                 
                 if tag == 0 {
@@ -98,27 +135,27 @@ struct ContentView: View {
                 }else if tag == 1 {
                     self.outLocation()
                 }
-
+                
             }
-        
+            
             
             
             
         }.navigationBarTitle(Text("打卡记录"), displayMode: .inline).navigationBarItems(leading: Button(action: { 
+            self.addItem.toggle()
+        }, label: { 
+            Text("补卡")
+        }), trailing: Button(action: { 
+            self.qingJiaAM()
+            
+        }, label: { 
+            Text("请假")
+        })).sheet(isPresented: $addItem) { 
+            
+            EditNewItemDateView { (newItem: DateModel) in
+                self.model.list.insert(newItem, at: 0)
                 self.addItem.toggle()
-            }, label: { 
-                Text("+").font(Font.title)
-            }), trailing: Button(action: { 
-                self.qingJiaAM()
-                
-            }, label: { 
-                Text("请假")
-            })).sheet(isPresented: $addItem) { 
-                
-                EditNewItemDateView { (newItem: DateModel) in
-                    self.model.list.insert(newItem, at: 0)
-                    self.addItem.toggle()
-                }
+            }
         }
         
         
@@ -143,18 +180,37 @@ struct ContentView: View {
     }
     
     var summaryLabel: some View {
-        HStack {
-            Text("加班统计")
-            Spacer()
-            if getAllExtenTimes() == "未加班" {
-                Text(getAllExtenTimes())
-            }else{
-                Text(getAllExtenTimes()).foregroundColor(Color.red)
+        let times = model.list.count.description + "天/" + getAllExtenTimes();
+        let isRed = times == "未加班"
+        
+        let allList = DateItemModel.readAllDateItems();
+        var days = 0;
+        let allTimes = allList.reduce(0) { (result, item) -> Int in
+            
+            if item.externTimeInt > 0 {
+                days += 1;
             }
+           return item.externTimeInt + result
+        }
+        
+        let allTimesString = String(format: "%0.1f", Double(allTimes)/2.0);
+        
+        return VStack(alignment: .center) {
+            HStack{
+                Text("总计")
+                Spacer()
+                Text("\(days)天/\(allTimesString)个小时")
+            }
+            HStack {
+                Text("加班统计")
+                Spacer()
+                Text(times).foregroundColor(isRed ? Color.red : Color(.label))
+            }
+            
         }
     }
     
- 
+    
     
     func getAllExtenTimes() -> String {
         let allTime = model.list.reduce(0) { (result, item) -> Int in
@@ -197,19 +253,19 @@ struct YYYYMMView: View {
                             ForEach(0..<self.count) { (idx: Int) in
                                 Text((2020 + idx).description + "年")
                             }
-                            }.labelsHidden().frame(width: geo.size.width/2, alignment: .center).clipped().padding(0)
+                        }.labelsHidden().frame(width: geo.size.width/2, alignment: .center).clipped().padding(0)
                         Picker("", selection: self.$mmIndex) {
                             ForEach(1..<13) { (idx: Int) in
                                 Text(String(format: "%02d", idx) + "月")
                             }
-                            }.labelsHidden().frame(width: geo.size.width/2, alignment: .center).clipped().padding(0)
+                        }.labelsHidden().frame(width: geo.size.width/2, alignment: .center).clipped().padding(0)
                     }
                     Spacer()
                 }.navigationBarTitle(Text("选择日期"), displayMode: .inline).navigationBarItems(trailing: Button(action: { 
                     self.doneSelectedDate(self.getValueDate())
                 }, label: { 
                     Text("完成")
-            }))
+                }))
             }
         }
     }
@@ -240,12 +296,12 @@ extension ContentView {
             endTime = hhmmss
         }
         let json = DateModel(beginTime: beginTime, endTime: endTime, date: item.date)
+        
         let idx = model.list.firstIndex { (subItem) -> Bool in
             subItem.id == item.id
         }
         if idx != nil {
             model.list[idx!] = json
-
         }
         
         
@@ -437,28 +493,39 @@ struct DateTimeItem: View {
     let date: String
     var clickItem:((_ index: Int) -> Void)?
     
+    @State private var showRemark = false
     
     var body: some View {
-        VStack(alignment: .leading){
-            HStack {
-                Text(getCurrentDate()).foregroundColor(model.color).font(Font.system(size: 18, weight: .bold, design: .serif))
-                Spacer()
-                
-            }.padding(.bottom, 12)
+        VStack(alignment: .leading) {
             
-            HStack {
-                Text(model.beginTimeValue).onTapGesture {
-                    self.clickItem?(1)
-                }.font(Font.system(size: 14))
-                Spacer()
-                Text(model.endTimeValue).onTapGesture {
-                   self.clickItem?(2)
-                }.font(Font.system(size: 14))
+            if !model.readRemark().isEmpty {
+                Text(model.readRemark()).lineLimit(10).font(Font.system(size: 12))
             }
-            if model.externTime != nil{
-                Text(model.externTime!).padding([.top,.bottom], 10).foregroundColor(Color.red).font(Font.system(size: 14, weight: .bold, design: .rounded))
+            
+            VStack(alignment: .leading){
+                HStack {
+                    Text(getCurrentDate()).foregroundColor(model.color).font(Font.system(size: 18, weight: .bold, design: .serif)).onTapGesture {
+                        self.showRemark.toggle()
+                    }.sheet(isPresented: $showRemark) { ()  in
+                        RemakDate(model: self.model, dismiss: self.$showRemark)
+                    }
+                    Spacer()
+                    
+                }.padding(.bottom, 12)
+                
+                HStack {
+                    Text(model.beginTimeValue).onTapGesture {
+                        self.clickItem?(1)
+                    }.font(Font.system(size: 14))
+                    Spacer()
+                    endTimeLabel
+                }
+                
+                if model.externTime != nil{
+                    Text(model.externTime!).padding([.top,.bottom], 10).foregroundColor(Color.red).font(Font.system(size: 14, weight: .bold, design: .rounded))
+                }
             }
-        }
+        }.contextMenu(getContextMenu())
     }
     
     func getCurrentDate() -> String {
@@ -468,7 +535,52 @@ struct DateTimeItem: View {
         return date
     }
     
+    // 3d touche
+    @State private var presented = false
+    @State private var currentDate = Date()
+    @State private var json: AlertJson?
+    var endTimeLabel: some View {
+        
+        Text(model.endTimeValue).onTapGesture {
+            self.clickItem?(2)
+        }.font(Font.system(size: 14))
+        
+    }
+    
+    func getContextMenu() -> ContextMenu<RemarkMenu>? {
+        //        if model.readRemark().isEmpty {
+        //            return nil
+        //        }
+        return ContextMenu<RemarkMenu> {
+            RemarkMenu(remak: model.readRemark(), isCaculateTime: model.isCaculateTime ?? false) { 
+                self.clickItem?(-1)
+            }
+            //            RemarkMenu(remak: model.readRemark(), finishedBlock: : $model)
+            
+        }
+    }
+    
 }
+
+struct RemarkMenu: View {
+    let remak: String
+    let isCaculateTime: Bool
+    let finishedBlock: ()->Void
+    var body: some View {
+        VStack{
+            
+            Button(action: { 
+                self.finishedBlock()
+            }) { ()  in
+                Text(isCaculateTime == true ? "正常上班" : "加班")
+            }
+            Text("备注：")
+            Text(remak)
+            //            
+        }
+    }
+}
+
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         
@@ -478,6 +590,10 @@ struct ContentView_Previews: PreviewProvider {
     }
 }
 
+struct AlertJson: Identifiable {
+    var isFinished = ""
+    let id: String
+}
 
 
 struct AlterDatePickerView: View {
@@ -493,11 +609,11 @@ struct AlterDatePickerView: View {
                 
                 DatePicker(selection: $date, displayedComponents: .hourAndMinute) {
                     Text("")
-                }.labelsHidden().navigationBarTitle(Text(title), displayMode: .inline).navigationBarItems(trailing: Button(action: { 
+                }.datePickerStyle(WheelDatePickerStyle()).labelsHidden().navigationBarTitle(Text(title), displayMode: .inline).navigationBarItems(trailing: Button(action: { 
                     self.finishedBlock?(self.date)
                 }, label: { 
                     Text("完成")
-                    })).padding()
+                })).padding()
                 Spacer()
             }
         }
@@ -542,7 +658,7 @@ struct EditNewDateView: View {
                     Button(action: { 
                         self.dateType = .hourAndMinute
                         self.beginTime = self.getCurrentYMD(dateFormat: "HH:mm:ss")
-
+                        
                     }) { 
                         Text("上班时间")
                     }
@@ -555,7 +671,7 @@ struct EditNewDateView: View {
                     Button(action: { 
                         self.dateType = .hourAndMinute
                         self.endTime = self.getCurrentYMD(dateFormat: "HH:mm:ss")
-
+                        
                     }) { 
                         Text("下班时间")
                     }
@@ -566,7 +682,7 @@ struct EditNewDateView: View {
                 }
                 
                 timePicker
-            }.navigationBarTitle(Text("添加一条"), displayMode: .inline).navigationBarItems(trailing: Button(action: { 
+            }.navigationBarTitle(Text("补卡"), displayMode: .inline).navigationBarItems(trailing: Button(action: { 
                 
                 let model = DateModel(beginTime: self.beginTime, endTime: self.endTime, date: self.dateString)
                 self.finishedBlock(model)
@@ -580,7 +696,7 @@ struct EditNewDateView: View {
     var timePicker: some View {
         DatePicker(selection: $date, displayedComponents: dateType) {
             Text("")
-        }.labelsHidden()
+        }.datePickerStyle(WheelDatePickerStyle()).labelsHidden()
     }
     
     
@@ -590,17 +706,17 @@ struct EditNewDateView: View {
         formater.locale = Locale(identifier: "zh-Hans_US")
         formater.dateFormat = dateFormat
         return formater.string(from: date)
-            
-            
+        
+        
     }
-
+    
     
 }
 
 
 
 struct EditNewItemDateView: View {
-
+    
     @State var date = Date()
     @State var dateType = DatePickerComponents.date
     
@@ -617,7 +733,14 @@ struct EditNewItemDateView: View {
                 timePicker
                 
                 
-            }.navigationBarTitle(Text("添加一条"), displayMode: .inline).navigationBarItems(trailing: Button(action: { 
+            }.navigationBarTitle(Text("补卡"), displayMode: .inline).navigationBarItems(leading: Button(action: { 
+                
+                let model = DateModel(beginTime: "请假", endTime: "请假", date: self.timeList[0])
+                self.finishedBlock(model)
+                
+            }, label: {
+                Text("请假")
+            }), trailing: Button(action: { 
                 
                 let model = DateModel(beginTime: self.timeList[1], endTime: self.timeList[2], date: self.timeList[0])
                 self.finishedBlock(model)
@@ -625,6 +748,8 @@ struct EditNewItemDateView: View {
             }, label: { 
                 Text("完成")
             }))
+            
+//            .navigationBarItems(trailing: )
         }
     }
     
@@ -642,12 +767,12 @@ struct EditNewItemDateView: View {
                     self.dateType = .hourAndMinute
                     if index == 3 {
                         self.timeList[index] = self.getCurrentYMD(dateFormat: "HH:mm")
-
+                        
                     }else {
                         self.timeList[index] = self.getCurrentYMD(dateFormat: "HH:mm:ss")
                     }
                 }
-
+                
             }) { 
                 Text(title)
             }
@@ -659,7 +784,7 @@ struct EditNewItemDateView: View {
     var timePicker: some View {
         DatePicker(selection: $date, displayedComponents: dateType) {
             Text("")
-        }.labelsHidden()
+        }.datePickerStyle(WheelDatePickerStyle()).labelsHidden()
         
     }
     
@@ -670,8 +795,49 @@ struct EditNewItemDateView: View {
         formater.locale = Locale(identifier: "zh-Hans_US")
         formater.dateFormat = dateFormat
         return formater.string(from: date)
-            
+        
     }
+    
+}
 
+
+struct RemakDate: View {
+    
+    let model: DateModel
+    
+    @Binding var dismiss: Bool
+    
+    @State private var textValue = ""
+    
+    @State private var isCanEdit = false
+    
+    
+    
+    var body: some View {
+        NavigationView {
+            
+            VStack(alignment: .center) {
+                
+                
+                GeometryReader { (geo: GeometryProxy) in
+                    
+                    TextView(defalutText: self.model.readRemark(), valueText: self.$textValue, isCanEdit: self.$isCanEdit, finishedBlock: .constant(nil)).frame(width: abs(geo.size.width - 20), height: abs(geo.size.height - 60), alignment: .leading).border(Color(UIColor.lightGray), width: 1).shadow(radius: 2)
+                    
+                }.navigationBarTitle(Text("\(model.dateWeek ?? "")"), displayMode: .inline).navigationBarItems(trailing: Button(action: { 
+                    self.isCanEdit.toggle()
+                    self.model.saveCurrentRemark(remark: self.textValue)
+                    self.dismiss.toggle()
+                    
+                }, label: { 
+                    Text("完成")
+                }))
+                Spacer()
+            }
+            
+        }
+    }
+    
+    
+    
     
 }

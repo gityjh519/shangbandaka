@@ -27,6 +27,7 @@ struct TextView: UIViewRepresentable {
     func makeUIView(context: Context) -> UITextView {
         let textView = UITextView()
         
+        
         textView.delegate = context.coordinator
         textView.textContainerInset = .init(top: 10, left: 10, bottom: 10, right: 10)
         textView.font = .systemFont(ofSize: 16)

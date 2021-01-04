@@ -22,6 +22,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Create the SwiftUI view that provides the window contents.
         let contentView = ContentView().environmentObject(DateItemModel())//ContentView()
         
+        
+        
 //        let contentView = MainContactView().environmentObject(ContentItemJson(name: "我的", contacts: ContentItemJson.ceateList()))
 
         // Use a UIHostingController as window root view controller.
@@ -31,6 +33,17 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             self.window = window
             window.makeKeyAndVisible()
         }
+    }
+    
+    func setOfficeView() {
+        let content = ContentView().environmentObject(DateItemModel())
+        let ctrl = UIHostingController(rootView: content);
+        self.window?.rootViewController = ctrl
+    }
+    
+    func setContact()  {
+        let contentView = MainContactView().environmentObject(ContentItemJson(name: "我的", contacts: ContentItemJson.ceateList()))
+        self.window?.rootViewController = UIHostingController(rootView: contentView)
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {

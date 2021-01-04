@@ -26,6 +26,7 @@
 /* Begin PBXFileReference section */
 		F7070FEC24F4F26A00BAE05B /* DetialView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DetialView.swift; sourceTree = "<group>"; };
 		F780A6A724F5F5C400D9C333 /* MainContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainContentView.swift; sourceTree = "<group>"; };
+		F7A7255A2537D5F000EA5E94 /* 打卡记录.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "打卡记录.entitlements"; sourceTree = "<group>"; };
 		F7C91E2825071C3400B83FF6 /* TextViwe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextViwe.swift; sourceTree = "<group>"; };
 		F7D817892502261600706888 /* UIKitScroll.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIKitScroll.swift; sourceTree = "<group>"; };
 		F7EC9D402505CB94004356D8 /* DateScrollView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DateScrollView.swift; sourceTree = "<group>"; };
@@ -99,6 +100,7 @@
 		F7FCA64224EB8C86004D0F4F /* OfficeManger */ = {
 			isa = PBXGroup;
 			children = (
+				F7A7255A2537D5F000EA5E94 /* 打卡记录.entitlements */,
 				F7EC9D422505CBAB004356D8 /* contact */,
 				F7EC9D3F2505C4D0004356D8 /* dateView */,
 				F7070FEB24F4F25200BAE05B /* otherView */,
@@ -340,6 +342,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "OfficeManger/打卡记录.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"OfficeManger/Preview Content\"";
 				DEVELOPMENT_TEAM = 9N2X3NEXD7;
@@ -353,6 +356,7 @@
 				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.assist.testapp;
 				PRODUCT_NAME = "打卡记录";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -362,6 +366,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "OfficeManger/打卡记录.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"OfficeManger/Preview Content\"";
 				DEVELOPMENT_TEAM = 9N2X3NEXD7;
@@ -375,6 +380,7 @@
 				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.assist.testapp;
 				PRODUCT_NAME = "打卡记录";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
