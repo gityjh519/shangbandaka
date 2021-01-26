@@ -416,3 +416,14 @@ extension DateItemModel {
         return allList
     }
 }
+
+
+extension Date {
+    var currentDate: String {
+        let formater = DateFormatter()
+        formater.dateFormat = "yyyy年MM月dd日 EEEE";
+        formater.locale = Locale(identifier: "zh-Hans_US")
+        formater.calendar = .init(identifier: .gregorian);
+        return formater.string(from: Date());
+    }
+}

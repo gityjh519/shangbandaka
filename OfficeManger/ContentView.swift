@@ -721,7 +721,7 @@ struct EditNewItemDateView: View {
     @State var dateType = DatePickerComponents.date
     
     let finishedBlock: ((_ item: DateModel)->Void)
-    @State var timeList = ["X年X月X日","00:00","00:00","19:00"]
+    @State var timeList = [Date().currentDate,"08:50","18:05","19:00"]
     let titles = ["上班日期","上班时间","下班时间","开始加班时间"]
     
     var body: some View {
